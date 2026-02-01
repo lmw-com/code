@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>現代化四則運算計算機</title>
+    <!-- 引入 Tailwind CSS 用於快速佈局與樣式設定 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+        
+        body {
+            font-family: 'Inter', 'Microsoft JhengHei', sans-serif;
+            transition: background-color 0.3s ease;
+        }
+
+        /* 按鈕互動動畫 */
+        .calc-button {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .calc-button:active {
+            transform: scale(0.92);
+        }
+
+        /* 磨砂玻璃效果 */
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .dark .glass-effect {
+            background: rgba(31, 41, 55, 0.9);
+        }
+
+        /* 自定義滾動條樣式 */
+        #history-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+        #history-panel::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        /* 淡入動畫 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
+
+    <div id="app-container" class="w-full max-w-md">
+        <!-- 主計算機外殼 -->
+        <div class="glass-effect rounded-3xl shadow-2xl overflow-hidden border border-white/20">
+            
+            <!-- 頂部工具列 -->
+            <div class="p-4 flex justify-between items-center bg-white/50 dark:bg-gray-800/50">
+                <span class="text-sm font-semibold text-slate-500 dark:text-slate-400">標準計算機</span>
+                <button onclick="toggleDarkMode()" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors">
+                    <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- 螢幕顯示區 -->
+            <div class="p-6 text-right">
+                <div id="prev-expression" class="h-6 text-slate-400 dark:text-slate-500 text-sm overflow-hidden mb-1"></div>
+                <div id="current-display" class="text-5xl font-light text-slate-800 dark:text-white truncate">0</div>
+            </div>
+
+            <!-- 按鈕區 -->
+            <div class="p-4 grid grid-cols-4 gap-3">
+                <!-- 第一排：功能鍵 -->
+                <button onclick="clearAll()" class="calc-button col-span-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-4 rounded-2xl font-bold">AC</button>
+                <button onclick="deleteLast()" class="calc-button bg-slate-200 dark:bg-gray-700 text-slate-700 dark:text-slate-200 p-4 rounded-2xl font-bold">⌫</button>
+                <button onclick="appendOperator('/')" class="calc-button bg-blue-500 text-white p-4 rounded-2xl font-bold text-xl">÷</button>
+
+                <!-- 第二排 -->
+                <button onclick="appendNumber('7')" class="calc-button bg-white dark:bg-gray-800 text-slate-700 dark:text-slate-200 p-4 rounded-2xl text-xl shadow-sm border border-slate-100 dark:border-gray-700">7</button>
+                <button onclick="appendNumber('8')" class="calc-button bg-white dark:bg-gray-800 text-slate-700 dark:text-slate-200 p-4 rounded-2xl text-xl shadow-sm border border-slate-100 dark:border-gray-700">8</button>
+                <button onclick="appendNumber('9')" class="calc-button bg-white dark:bg-gray-800 text-slate-700 dark:text-slate-200 p-4 rounded-2xl text-xl shadow-sm border border-slate-100 dark:border-gray-700">9</button>
+                <button onclick="appendOperator('*')" class="calc-button bg-blue-500 text-white p-4 rounded-2xl font-bold text-xl">×</button>
+
+                <!-- 第三排 -->
+                <button onclick="appendNumber('4')" class="calc-button bg-white dark:bg-gray-800 text-slate-700 dark:text-slate-200 p-4 rounded-2xl text-xl shadow-sm border border-slate-100 dark:border-gray-700">4</button>
+                <button onclick="appendNumber('5')" class="calc-button bg-white dark:bg-gray-800 text-slate-700 dark:text-slate-200 p-4 rounded-2xl text-xl shadow-sm border border-slate-100 dark:border-gray-700">5</button>
+                <button onclick="appendNumber('6')" class="calc-button bg-white dark:bg-gray-800 text-slate-700 dark:text-slate-200 p-4 rounded-2xl text-xl shadow-sm border border-slate-100 dark:border-gray-700">6</button>
+                <button onclick="appendOperator('-')" class="calc-button bg-blue-500 text-white p-4 rounded-2xl font-bold text-xl">−</button>
+
+                <!-- 第四排 -->
+                <button onclick="appendNumber('1')" class="calc-button bg-white dark:bg-gray-800 text-slate-700 dark:text-slate-200 p-4 rounded-2xl text-xl shadow-sm border border-slate-100 dark:border-gray-700">1</button>
+                <button onclick="appendNumber('2')" class="calc-button bg-white dark:bg-gray-800 text-slate-700 dark:text-slate-200 p-4 rounded-2xl text-xl shadow-sm border border-slate-100 dark:border-gray-700">2</button>
+                <button onclick="appendNumber('3')" class="calc-button bg-white dark:bg-gray-800 text-slate-700 dark:text-slate-200 p-4 rounded-2xl text-xl shadow-sm border border-slate-100 dark:border-gray-700">3</button>
+                <button onclick="appendOperator('+')" class="calc-button bg-blue-500 text-white p-4 rounded-2xl font-bold text-xl">+</button>
+
+                <!-- 第五排 -->
+                <button onclick="appendNumber('0')" class="calc-button col-span-2 bg-white dark:bg-gray-800 text-slate-700 dark:text-slate-200 p-4 rounded-2xl text-xl shadow-sm border border-slate-100 dark:border-gray-700">0</button>
+                <button onclick="appendNumber('.')" class="calc-button bg-white dark:bg-gray-800 text-slate-700 dark:text-slate-200 p-4 rounded-2xl text-xl shadow-sm border border-slate-100 dark:border-gray-700">.</button>
+                <button onclick="calculate()" class="calc-button bg-indigo-600 text-white p-4 rounded-2xl font-bold text-xl shadow-lg shadow-indigo-200 dark:shadow-none">=</button>
+            </div>
+
+            <!-- 歷史紀錄 -->
+            <div id="history-panel" class="px-6 py-4 bg-slate-50 dark:bg-gray-900/50 border-t border-slate-100 dark:border-gray-700 max-h-40 overflow-y-auto">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase">歷史紀錄</span>
+                    <button onclick="clearHistory()" class="text-xs text-blue-500 hover:underline">清除</button>
+                </div>
+                <div id="history-list" class="space-y-2">
+                    <p class="text-xs text-slate-400 italic">尚無運算紀錄</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 狀態變數
+        let currentInput = '0';
+        let previousExpression = '';
+        let isResultDisplayed = false;
+
+        // DOM 元素參考
+        const displayElement = document.getElementById('current-display');
+        const prevElement = document.getElementById('prev-expression');
+        const historyList = document.getElementById('history-list');
+
+        // 更新畫面顯示
+        function updateDisplay() {
+            displayElement.innerText = currentInput;
+            prevElement.innerText = previousExpression;
+        }
+
+        // 輸入數字
+        function appendNumber(num) {
+            if (isResultDisplayed) {
+                currentInput = num === '.' ? '0.' : num;
+                isResultDisplayed = false;
+            } else {
+                if (currentInput === '0' && num !== '.') {
+                    currentInput = num;
+                } else {
+                    if (num === '.' && currentInput.includes('.')) return;
+                    currentInput += num;
+                }
+            }
+            updateDisplay();
+        }
+
+        // 輸入運算子
+        function appendOperator(op) {
+            if (isResultDisplayed) {
+                previousExpression = currentInput + ' ' + op + ' ';
+                isResultDisplayed = false;
+            } else {
+                if (currentInput === '0' && previousExpression === '') return;
+                previousExpression += currentInput + ' ' + op + ' ';
+            }
+            currentInput = '0';
+            updateDisplay();
+        }
+
+        // 全部清除 (AC)
+        function clearAll() {
+            currentInput = '0';
+            previousExpression = '';
+            isResultDisplayed = false;
+            updateDisplay();
+        }
+
+        // 刪除最後一個字元 (Backspace)
+        function deleteLast() {
+            if (isResultDisplayed) return;
+            currentInput = currentInput.slice(0, -1);
+            if (currentInput === '' || currentInput === '-') currentInput = '0';
+            updateDisplay();
+        }
+
+        // 執行運算 (=)
+        function calculate() {
+            if (previousExpression === '' || isResultDisplayed) return;
+            
+            const fullExpression = previousExpression + currentInput;
+            try {
+                // 使用 Function 構造函數安全執行運算字串
+                const result = Function('"use strict"; return (' + fullExpression + ')')();
+                
+                // 處理浮點數精度問題 (取至小數點第 10 位)
+                const formattedResult = Number(parseFloat(result.toFixed(10)).toString());
+                
+                // 新增至歷史紀錄
+                addHistory(fullExpression, formattedResult);
+                
+                previousExpression = fullExpression + ' =';
+                currentInput = formattedResult.toString();
+                isResultDisplayed = true;
+                updateDisplay();
+            } catch (e) {
+                currentInput = 'Error';
+                updateDisplay();
+                setTimeout(clearAll, 1500);
+            }
+        }
+
+        // 管理歷史紀錄 UI
+        function addHistory(expr, res) {
+            if (historyList.querySelector('p')) historyList.innerHTML = '';
+            
+            const item = document.createElement('div');
+            item.className = 'text-sm flex justify-between border-b border-slate-100 dark:border-gray-800 pb-1 animate-fade-in';
+            item.innerHTML = `
+                <span class="text-slate-500 dark:text-slate-400">${expr}</span>
+                <span class="font-bold text-slate-700 dark:text-slate-200">= ${res}</span>
+            `;
+            historyList.prepend(item);
+        }
+
+        function clearHistory() {
+            historyList.innerHTML = '<p class="text-xs text-slate-400 italic">尚無運算紀錄</p>';
+        }
+
+        // 切換深色模式
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        // 初始化佈景主題 (從 localStorage 或 系統偏好設定)
+        if (localStorage.getItem('theme') === 'dark' || 
+            (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        // 實體鍵盤支援
+        document.addEventListener('keydown', (e) => {
+            if (e.key >= '0' && e.key <= '9') appendNumber(e.key);
+            if (e.key === '.') appendNumber('.');
+            if (e.key === '+') appendOperator('+');
+            if (e.key === '-') appendOperator('-');
+            if (e.key === '*') appendOperator('*');
+            if (e.key === '/') appendOperator('/');
+            if (e.key === 'Enter' || e.key === '=') {
+                e.preventDefault(); // 防止某些按鈕觸發預設 Enter
+                calculate();
+            }
+            if (e.key === 'Escape') clearAll();
+            if (e.key === 'Backspace') deleteLast();
+        });
+    </script>
+</body>
+</html>

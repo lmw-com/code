@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini 程式碼即時預覽器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f8fafc;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .editor-container {
+            height: 40%;
+            min-height: 200px;
+        }
+        .preview-container {
+            flex-grow: 1;
+            background: white;
+            border-top: 2px solid #e2e8f0;
+        }
+        #code-input {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            resize: none;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 頂部標題與控制列 -->
+    <header class="bg-indigo-600 text-white p-4 shadow-md flex justify-between items-center">
+        <h1 class="text-lg font-bold">Gemini 程式碼即時預覽器</h1>
+        <div class="space-x-2">
+            <button onclick="clearCode()" class="bg-indigo-500 hover:bg-indigo-400 px-4 py-2 rounded-lg text-sm transition">清除內容</button>
+            <button onclick="renderPreview()" class="bg-white text-indigo-600 hover:bg-gray-100 px-6 py-2 rounded-lg font-bold shadow transition">確定並執行</button>
+        </div>
+    </header>
+
+    <!-- 程式碼輸入區 -->
+    <div class="editor-container p-4 bg-slate-800">
+        <textarea id="code-input" class="w-full h-full p-4 bg-slate-900 text-green-400 border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="在此貼上從 Gemini 生成的 HTML 程式碼..."></textarea>
+    </div>
+
+    <!-- 預覽呈現區 -->
+    <div class="preview-container relative">
+        <div class="absolute top-2 left-4 text-xs font-mono text-slate-400 pointer-events-none">預覽視窗 (Preview)</div>
+        <iframe id="preview-frame"></iframe>
+    </div>
+
+    <script>
+        function renderPreview() {
+            const code = document.getElementById('code-input').value;
+            const iframe = document.getElementById('preview-frame');
+            
+            if (!code.trim()) {
+                alert("請先貼上程式碼！");
+                return;
+            }
+
+            // 取得 iframe 的 document 並寫入程式碼
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(code);
+            iframeDoc.close();
+        }
+
+        function clearCode() {
+            if (confirm("確定要清除所有內容嗎？")) {
+                document.getElementById('code-input').value = '';
+                const iframe = document.getElementById('preview-frame');
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                iframeDoc.open();
+                iframeDoc.write('');
+                iframeDoc.close();
+            }
+        }
+
+        // 支援快捷鍵 Ctrl+Enter 執行
+        document.getElementById('code-input').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                renderPreview();
+            }
+        });
+    </script>
+</body>
+</html>
